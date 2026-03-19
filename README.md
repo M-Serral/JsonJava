@@ -1,37 +1,45 @@
 # JsonJava
 
-Un proyecto Java Maven diseñado para Software Development Engineer in Test (SDET) que extrae datos de clientes desde una base de datos MySQL y los convierte en archivos JSON para la generación de datos de prueba, especialmente útil en escenarios de automatización móvil con Appium.
+Un proyecto Java Maven diseñado para Software Development Engineer in Test (SDET) que extrae datos de clientes desde una
+base de datos MySQL y los convierte en archivos JSON para la generación de datos de prueba, especialmente útil en
+escenarios de automatización móvil con Appium.
 
 ## Descripción
 
-Este proyecto facilita la transición de datos relacionales (MySQL) a formatos estructurados (JSON) para pruebas automatizadas.
+Este proyecto facilita la transición de datos relacionales (MySQL) a formatos estructurados (JSON) para pruebas
+automatizadas.
 
 El flujo actual implementado es:
 
 Base de Datos MySQL → Objetos Java (POJOs) → JSON estructurado → Deserialización selectiva a objetos Java
 
-Los datos se agrupan en un único JSON bajo una clave `data`, permitiendo trabajar con colecciones completas de registros para escenarios data-driven.
+Los datos se agrupan en un único JSON bajo una clave `data`, permitiendo trabajar con colecciones completas de registros
+para escenarios data-driven.
 
 Es ideal para entornos de testing donde necesitas datos dinámicos, mantenibles y desacoplados del código de pruebas.
 
 ## Modificaciones Recientes
 
-- **jsonToJava.java**: Actualizado para conectar a la base de datos con credenciales `dev`/`dev`, ejecutar consulta `SELECT * FROM CustomerInfo WHERE Location = 'Asia'`, mapear resultados a objetos `CustomerDetails`, almacenarlos en un `ArrayList`, y serializar a JSON con estructura `{"data": [lista]}` en `customerData.json`.
+- **jsonToJava.java**: Actualizado para conectar a la base de datos con credenciales `dev`/`dev`, ejecutar consulta
+  `SELECT * FROM CustomerInfo WHERE Location = 'Asia'`, mapear resultados a objetos `CustomerDetails`, almacenarlos en
+  un `ArrayList`, y serializar a JSON con estructura `{"data": [lista]}` en `customerData.json`.
 
-- **extractJson.java**: Actualizado para leer `customerData.json` como `Map<String, Object>`, extraer la lista bajo la clave `"data"`, obtener el primer elemento, convertirlo dinámicamente a `CustomerDetailsAppium` usando `ObjectMapper.convertValue()`, e imprimir el `courseName`.
+- **extractJson.java**: Actualizado para leer `customerData.json` como `Map<String, Object>`, extraer la lista bajo la
+  clave `"data"`, obtener el primer elemento, convertirlo dinámicamente a `CustomerDetailsAppium` usando
+  `ObjectMapper.convertValue()`, e imprimir el `courseName`.
 
 ## Características
 
 - Extracción de Datos: Conexión a MySQL y ejecución de queries filtradas (por Location = 'Asia').
 - Serialización estructurada a JSON:
-  - Generación de un único archivo `customerData.json`.
-  - Uso de estructura tipo colección: `"data": [ ... ]`.
+    - Generación de un único archivo `customerData.json`.
+    - Uso de estructura tipo colección: `"data": [ ... ]`.
 - Deserialización flexible:
-  - Lectura de JSON como `Map<String, Object>`.
-  - Conversión dinámica a POJOs con Jackson (`convertValue`).
+    - Lectura de JSON como `Map<String, Object>`.
+    - Conversión dinámica a POJOs con Jackson (`convertValue`).
 - POJOs especializados:
-  - `CustomerDetails`: Campos básicos (courseName, purchasedDate, amount, location).
-  - `CustomerDetailsAppium`: Extiende `CustomerDetails` con `studentName`.
+    - `CustomerDetails`: Campos básicos (courseName, purchasedDate, amount, location).
+    - `CustomerDetailsAppium`: Extiende `CustomerDetails` con `studentName`.
 - Preparado para Data-Driven Testing.
 - Integración con Appium.
 - Desacoplamiento de datos.
@@ -75,6 +83,12 @@ Es ideal para entornos de testing donde necesitas datos dinámicos, mantenibles 
       "purchasedDate": "2026-03-13",
       "amount": 21,
       "location": "Asia"
+    },
+    {
+      "courseName": "Jmeter",
+      "purchasedDate": "2026-03-13",
+      "location": "Asia",
+      "amount": 76
     }
   ]
 }
@@ -124,16 +138,17 @@ Esto generará `customerData.json` en la raíz del proyecto.
 mvn exec:java -Dexec.mainClass="extractJson"
 ```
 
-Esto leerá `customerData.json`, extraerá el primer registro, lo convertirá a `CustomerDetailsAppium` e imprimirá el `courseName`.
+Esto leerá `customerData.json`, extraerá el primer registro, lo convertirá a `CustomerDetailsAppium` e imprimirá el
+`courseName`.
 
 ## Testing
 
-En un proyecto de Appium, puedes usar los objetos deserializados para alimentar datos en pruebas móviles, por ejemplo, creando usuarios dinámicos basados en los datos de `CustomerDetailsAppium`.
+En un proyecto de Appium, puedes usar los objetos deserializados para alimentar datos en pruebas móviles, por ejemplo,
+creando usuarios dinámicos basados en los datos de `CustomerDetailsAppium`.
 
 ## Troubleshooting
 
 - **Conexión MySQL**: Asegúrate de que MySQL esté corriendo y la DB `Business` exista con datos en `CustomerInfo`.
-- **Dependencias Maven**: Si hay errores de resolución, verifica tu `settings.xml` de Maven (ver AGENTS.md para issues con artifactory interno).
 - **Java Version**: El proyecto requiere Java 11+. Verifica con `java -version`.
 - **Archivos JSON**: Si no se generan, revisa logs de ejecución y permisos de escritura.
 
