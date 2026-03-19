@@ -1,20 +1,13 @@
-import java.io.File;
-import java.io.IOException;
-
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class extractJson {
-
-	public static void main(String[] args) throws JsonParseException, JsonMappingException, IOException {
-		// TODO Auto-generated method stub
+void main() throws IOException {
 
 
-		ObjectMapper o=new ObjectMapper();
-		CustomerDetailsAppium c=o.readValue(new File("CUSTOMERINFO0.json"), CustomerDetailsAppium.class);
-		
-		System.out.println(c.getCourseName());
-	}
+    ObjectMapper o = new ObjectMapper();
+    Map<String, Object> map = o.readValue(new File("customerData.json"), Map.class);
+    List<Map<String, Object>> data = (List<Map<String, Object>>) map.get("data");
+    Map<String, Object> first = data.getFirst();
+    CustomerDetailsAppium c = o.convertValue(first, CustomerDetailsAppium.class);
 
+    IO.println(c.getCourseName());
 }

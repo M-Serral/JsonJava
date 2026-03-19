@@ -4,148 +4,139 @@ Un proyecto Java Maven diseñado para Software Development Engineer in Test (SDE
 
 ## Descripción
 
-Este proyecto facilita la transición de datos relacionales (MySQL) a formatos estructurados (JSON) para pruebas automatizadas. El flujo principal es: Base de Datos MySQL → Objetos Java (POJOs) → Archivos JSON → Deserialización de vuelta a objetos Java para uso en pruebas.
+Este proyecto facilita la transición de datos relacionales (MySQL) a formatos estructurados (JSON) para pruebas automatizadas.
 
-Es ideal para entornos de testing donde necesitas datos realistas y actualizables sin hardcodear valores en el código de pruebas.
+El flujo actual implementado es:
+
+Base de Datos MySQL → Objetos Java (POJOs) → JSON estructurado → Deserialización selectiva a objetos Java
+
+Los datos se agrupan en un único JSON bajo una clave `data`, permitiendo trabajar con colecciones completas de registros para escenarios data-driven.
+
+Es ideal para entornos de testing donde necesitas datos dinámicos, mantenibles y desacoplados del código de pruebas.
+
+## Modificaciones Recientes
+
+- **jsonToJava.java**: Actualizado para conectar a la base de datos con credenciales `dev`/`dev`, ejecutar consulta `SELECT * FROM CustomerInfo WHERE Location = 'Asia'`, mapear resultados a objetos `CustomerDetails`, almacenarlos en un `ArrayList`, y serializar a JSON con estructura `{"data": [lista]}` en `customerData.json`.
+
+- **extractJson.java**: Actualizado para leer `customerData.json` como `Map<String, Object>`, extraer la lista bajo la clave `"data"`, obtener el primer elemento, convertirlo dinámicamente a `CustomerDetailsAppium` usando `ObjectMapper.convertValue()`, e imprimir el `courseName`.
 
 ## Características
 
-- **Extracción de Datos**: Conecta a MySQL y ejecuta consultas para filtrar datos (ej. por ubicación o fecha).
-- **Serialización a JSON**: Convierte objetos Java a archivos JSON usando Jackson, con mapeo automático de campos (PascalCase en Java a camelCase en JSON).
-- **Deserialización**: Ejemplos para leer JSON de vuelta a objetos Java.
-- **POJOs Especializados**: Incluye clases como `CustomerDetails` (básica) y `CustomerDetailsAppium` (extendida para pruebas móviles).
-- **Integración con Appium**: Los JSON sirven como fuente de datos para automatización de pruebas móviles, permitiendo escenarios data-driven.
-- **Flexibilidad**: Fácil de extender para nuevos campos o consultas.
+- Extracción de Datos: Conexión a MySQL y ejecución de queries filtradas (por Location = 'Asia').
+- Serialización estructurada a JSON:
+  - Generación de un único archivo `customerData.json`.
+  - Uso de estructura tipo colección: `"data": [ ... ]`.
+- Deserialización flexible:
+  - Lectura de JSON como `Map<String, Object>`.
+  - Conversión dinámica a POJOs con Jackson (`convertValue`).
+- POJOs especializados:
+  - `CustomerDetails`: Campos básicos (courseName, purchasedDate, amount, location).
+  - `CustomerDetailsAppium`: Extiende `CustomerDetails` con `studentName`.
+- Preparado para Data-Driven Testing.
+- Integración con Appium.
+- Desacoplamiento de datos.
 
 ## Arquitectura
 
-- **Flujo de Datos**:
-  1. Conexión a MySQL (`Business` schema, tabla `CustomerInfo`).
-  2. Ejecución de consulta SQL (ej. `SELECT * FROM CustomerInfo WHERE Location = 'Asia'`).
-  3. Mapeo de resultados a POJOs (`CustomerDetails`).
-  4. Serialización a JSON con ObjectMapper.
-  5. Almacenamiento en archivos (ej. `CUSTOMERINFO0.json`).
-  6. Deserialización opcional para uso en pruebas.
+### Flujo de Datos
 
-- **Componentes Clave**:
-  - `jsonToJava.java`: Clase principal para extracción y serialización.
-  - `extractJson.java`: Ejemplo de deserialización.
-  - `CustomerDetails.java`: POJO básico (courseName, purchasedDate, Amount, Location).
-  - `CustomerDetailsAppium.java`: POJO extendido con `studentName` para Appium.
+1. Conexión a MySQL (`127.0.0.1:3306/Business`, usuario: `dev`, password: `dev`).
+2. Ejecución de consulta SQL: `SELECT * FROM CustomerInfo WHERE Location = 'Asia';`.
+3. Mapeo a `CustomerDetails`.
+4. Almacenamiento en `ArrayList<CustomerDetails>`.
+5. Creación de `Map<String, Object>` con clave `"data"` conteniendo la lista.
+6. Serialización a JSON y escritura en `customerData.json`.
+7. Lectura del JSON como `Map`.
+8. Extracción de la lista `"data"`.
+9. Obtención del primer elemento (`data.getFirst()`).
+10. Conversión a `CustomerDetailsAppium` usando `convertValue`.
+11. Uso del objeto (ej. imprimir `courseName`).
 
-- **Dependencias**:
-  - Jackson (2.15.2): Para procesamiento JSON.
-  - MySQL Connector (8.0.19): Para conectividad DB.
+### Componentes Clave
 
-## Requisitos Previos
+- `jsonToJava.java`: Maneja la extracción de DB y serialización a JSON.
+- `extractJson.java`: Maneja la deserialización de JSON y conversión a POJO.
+- `CustomerDetails.java`: POJO básico con getters/setters.
+- `CustomerDetailsAppium.java`: POJO extendido para Appium.
 
-- **Java**: JDK 11 o superior (recomendado JDK 17 para compatibilidad).
-- **Maven**: Para gestión de dependencias y builds.
-- **MySQL**: Instancia corriendo en `localhost:3306` con:
-  - Base de datos: `Business`.
-  - Tabla: `CustomerInfo` (columnas: courseName, purchasedDate, Amount, Location).
-  - Credenciales: Usuario `dev`, contraseña `dev` (o ajusta en el código).
-- **IDE**: IntelliJ IDEA recomendado para debugging y ejecución.
+### Ejemplo de JSON Generado
 
-## Instalación y Configuración
+```json
+{
+  "data": [
+    {
+      "courseName": "Appium",
+      "purchasedDate": "2026-03-13",
+      "amount": 99,
+      "location": "Asia"
+    },
+    {
+      "courseName": "WebServices",
+      "purchasedDate": "2026-03-13",
+      "amount": 21,
+      "location": "Asia"
+    }
+  ]
+}
+```
 
-1. **Clona el Repositorio**:
-   ```bash
-   git clone <url-del-repositorio>
-   cd JsonJava
-   ```
+## Dependencias
 
-2. **Configura MySQL**:
-   - Asegúrate de que MySQL esté corriendo.
-   - Crea la DB y tabla si no existen:
-     ```sql
-     CREATE DATABASE Business;
-     USE Business;
-     CREATE TABLE CustomerInfo (
-         courseName VARCHAR(255),
-         purchasedDate DATE,
-         Amount INT,
-         Location VARCHAR(255)
-     );
-     -- Inserta datos de ejemplo
-     INSERT INTO CustomerInfo VALUES ('Appium', '2026-03-13', 99, 'Asia');
-     ```
+- **Jackson Core, Databind, Annotations 2.15.2**: Para procesamiento JSON.
+- **MySQL Connector 8.0.19**: Para conectividad a DB (scope runtime).
 
-3. **Compila el Proyecto**:
-   - En IntelliJ: Abre el proyecto y deja que Maven resuelva dependencias.
-   - O manualmente: `mvn clean compile` (nota: puede haber issues con repositorios Maven; ajusta `settings.xml` si es necesario).
+## Requisitos
 
-4. **Ejecuta**:
-   - Genera JSON: `mvn exec:java -Dexec.mainClass="jsonToJava"`
-   - Deserializa: `mvn exec:java -Dexec.mainClass="extractJson"`
+- Java 11+
+- Maven 3.x
+- MySQL corriendo en `localhost:3306`
+- Base de datos: `Business`
+- Tabla: `CustomerInfo` con columnas: courseName, purchasedDate, amount, location
+- Usuario DB: `dev`
+- Password DB: `dev`
+
+## Instalación
+
+```bash
+git clone <url-del-repositorio>
+cd JsonJava
+```
 
 ## Uso
 
-### Generar Datos de Prueba
-Ejecuta `jsonToJava` para extraer de DB y crear JSON:
-- Archivos generados: `CUSTOMERINFO0.json`, `CUSTOMERINFO1.json`, etc.
-- Salida en consola: Número de registros y confirmación de escritura.
+### Compilar el Proyecto
 
-### Usar en Pruebas Appium
-1. Deserializa un JSON a objeto:
-   ```java
-   ObjectMapper mapper = new ObjectMapper();
-   CustomerDetailsAppium user = mapper.readValue(new File("CUSTOMERINFO0.json"), CustomerDetailsAppium.class);
-   System.out.println(user.getStudentName());  // Ejemplo de uso
-   ```
+```bash
+mvn clean compile
+```
 
-2. Integra en tests móviles:
-   - Usa `user.getAmount()` para validar precios en la app.
-   - Parametriza tests con datos de JSON para escenarios múltiples.
+### Ejecutar Extracción y Generación de JSON
 
-### Ejemplos de Archivos JSON
-- `CUSTOMERINFO0.json`:
-  ```json
-  {
-    "courseName": "Appium",
-    "purchasedDate": "2026-03-13",
-    "location": "Asia",
-    "amount": 99,
-    "studentName": "John Doe"  // Campo extra en CustomerDetailsAppium
-  }
-  ```
+```bash
+mvn exec:java -Dexec.mainClass="jsonToJava"
+```
 
-## Utilidades
+Esto generará `customerData.json` en la raíz del proyecto.
 
-### A Nivel de Desarrollo
-- **POJOs Reutilizables**: Las clases JavaBean siguen patrones estándar, facilitando extensiones (ej. agregar validaciones con Bean Validation).
-- **Mapeo Automático**: Jackson maneja conversiones sin código extra, ideal para APIs REST o serialización.
-- **Debugging**: Breakpoints en `jsonToJava` permiten inspeccionar datos de DB.
-- **Escalabilidad**: Fácil agregar nuevas consultas o campos sin romper el flujo.
+### Ejecutar Deserialización y Uso de Datos
 
-### A Nivel de Testing
-- **Data-Driven Testing**: JSON como fuente externa para tests parametrizados, evitando dependencias de DB en ejecución.
-- **Automatización Móvil**: En Appium, alimenta datos a formularios, logins o validaciones (ej. comparar `courseName` con UI).
-- **Entornos Aislados**: Tests corren con JSON estáticos, ideales para CI/CD sin DB.
-- **Mantenimiento**: Actualiza datos en DB y regenera JSON; tests se adaptan automáticamente.
-- **Cobertura**: Soporta edge cases (ej. datos nulos, fechas pasadas) editando JSON manualmente.
+```bash
+mvn exec:java -Dexec.mainClass="extractJson"
+```
 
-## Contribución
+Esto leerá `customerData.json`, extraerá el primer registro, lo convertirá a `CustomerDetailsAppium` e imprimirá el `courseName`.
 
-1. Forkea el repo.
-2. Crea una rama para tu feature (`git checkout -b feature/nueva-funcionalidad`).
-3. Commit tus cambios (`git commit -m 'Agrega nueva funcionalidad'`).
-4. Push y crea un Pull Request.
+## Testing
 
-Asegúrate de que los tests pasen y el código siga convenciones Java (ej. getters/setters).
+En un proyecto de Appium, puedes usar los objetos deserializados para alimentar datos en pruebas móviles, por ejemplo, creando usuarios dinámicos basados en los datos de `CustomerDetailsAppium`.
 
 ## Troubleshooting
 
-- **Errores de Maven**: Si falla la descarga de plugins, edita `~/.m2/settings.xml` y comenta secciones `<mirrors>` y `<activeProfiles>` para usar repos públicos.
-- **Conexión DB**: Verifica que MySQL esté corriendo y las credenciales sean correctas.
-- **Archivos No Generados**: Revisa la consola por excepciones; asegura que la consulta devuelva resultados.
-- **Versiones Java**: Usa JDK 17 para evitar incompatibilidades.
+- **Conexión MySQL**: Asegúrate de que MySQL esté corriendo y la DB `Business` exista con datos en `CustomerInfo`.
+- **Dependencias Maven**: Si hay errores de resolución, verifica tu `settings.xml` de Maven (ver AGENTS.md para issues con artifactory interno).
+- **Java Version**: El proyecto requiere Java 11+. Verifica con `java -version`.
+- **Archivos JSON**: Si no se generan, revisa logs de ejecución y permisos de escritura.
 
 ## Licencia
 
-Este proyecto es de código abierto. Consulta el archivo LICENSE para detalles.
-
----
-
-¡Si tienes preguntas o necesitas ayuda para integrar con Appium, abre un issue en el repo!</content>
-<parameter name="filePath">C:\WorkspacesMine\SDET_TestArchitech\JsonJava\README.md
+Open Source
